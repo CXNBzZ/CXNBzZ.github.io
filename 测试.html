@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Android Web 控制面板</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family: "Segoe UI", Arial, sans-serif;
+    overflow:hidden;
+    height:100vh;
+    color:white;
+
+    background:
+    linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+/* 雨滴动画背景 */
+
+.rain{
+    position:fixed;
+    width:100%;
+    height:100%;
+    top:0;
+    left:0;
+    overflow:hidden;
+    z-index:0;
+}
+
+.drop{
+    position:absolute;
+    bottom:100%;
+    width:2px;
+    height:80px;
+    background:linear-gradient(transparent,rgba(255,255,255,0.7));
+    animation: rain linear infinite;
+}
+
+@keyframes rain{
+    to{
+        transform:translateY(120vh);
+    }
+}
+
+/* 主容器 */
+
+.panel{
+    position:relative;
+    z-index:1;
+
+    width:900px;
+    padding:35px;
+
+    border-radius:30px;
+
+    background:rgba(255,255,255,0.08);
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    box-shadow:
+    0 8px 32px rgba(0,0,0,0.35);
+
+    text-align:center;
+}
+
+/* 标题栏 */
+
+.topbar{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:15px;
+    margin-bottom:30px;
+    flex-wrap:wrap;
+}
+
+h1{
+    font-size:36px;
+    background:linear-gradient(90deg,#ffffff,#7dd3fc);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+/* 按钮 */
+
+button{
+    height:46px;
+    padding:0 22px;
+    border:none;
+    border-radius:16px;
+
+    background:linear-gradient(135deg,#00c6ff,#0072ff);
+
+    color:white;
+    font-size:15px;
+    cursor:pointer;
+
+    transition:0.3s;
+
+    box-shadow:
+    0 4px 15px rgba(0,114,255,0.4);
+}
+
+button:hover{
+    transform:translateY(-2px) scale(1.03);
+
+    background:linear-gradient(135deg,#4facfe,#00f2fe);
+}
+
+/* 输入框 */
+
+input{
+    width:420px;
+    max-width:90%;
+
+    height:48px;
+
+    margin:15px auto;
+
+    border:none;
+    outline:none;
+
+    border-radius:20px;
+
+    padding:0 18px;
+
+    color:white;
+    font-size:16px;
+
+    background:rgba(255,255,255,0.12);
+
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+
+    border:1px solid rgba(255,255,255,0.2);
+
+    box-shadow:
+    inset 0 0 10px rgba(255,255,255,0.05),
+    0 4px 20px rgba(0,0,0,0.2);
+}
+
+input::placeholder{
+    color:rgba(255,255,255,0.65);
+}
+
+/* 行布局 */
+
+.row{
+    margin:18px 0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:15px;
+}
+
+/* 日志区域 */
+
+#log{
+    margin-top:25px;
+
+    width:100%;
+    height:220px;
+
+    overflow:auto;
+
+    text-align:left;
+
+    padding:18px;
+
+    border-radius:22px;
+
+    background:rgba(255,255,255,0.08);
+
+    backdrop-filter:blur(12px);
+
+    border:1px solid rgba(255,255,255,0.12);
+
+    box-shadow:
+    inset 0 0 15px rgba(255,255,255,0.03);
+}
+
+select{
+    height:45px;
+    padding:0 15px;
+
+    border:none;
+    outline:none;
+
+    border-radius:14px;
+
+    color:white;
+
+    background:rgba(255,255,255,0.15);
+
+    backdrop-filter:blur(10px);
+
+    font-size:15px;
+}
+
+option{
+    color:black;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 雨滴 -->
+<div class="rain" id="rain"></div>
+
+<div class="panel">
+
+    <!-- 标题 + 顶部按钮 -->
+    <div class="topbar">
+
+        <h1 id="title">Android 网页控制面板</h1>
+
+        <button onclick="connectDevice()" id="connectBtn">
+            连接手机
+        </button>
+
+        <select onchange="changeLang(this.value)">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+        </select>
+
+    </div>
+
+    <!-- 功能按钮 -->
+    <div class="row">
+        <button onclick="goHome()" id="homeBtn">返回桌面</button>
+
+        <button onclick="rebootPhone()" id="rebootBtn">
+            重启手机
+        </button>
+
+        <button onclick="rebootFastboot()" id="fastbootBtn">
+            重启到 Fastboot
+        </button>
+    </div>
+
+    <!-- APP -->
+    <div class="row">
+        <input
+            id="packageInput"
+            placeholder="输入包名，例如 com.android.settings"
+        >
+
+        <button onclick="openApp()" id="openBtn">
+            打开 APP
+        </button>
+    </div>
+
+    <!-- shell -->
+    <div class="row">
+        <input
+            id="customCmd"
+            placeholder="输入自定义 shell 指令"
+        >
+
+        <button onclick="runCustom()" id="runBtn">
+            执行指令
+        </button>
+    </div>
+
+    <!-- 日志 -->
+    <div id="log"></div>
+
+</div>
+
+<script>
+let device;
+
+/* 雨滴生成 */
+
+const rain = document.getElementById('rain');
+
+for(let i=0;i<180;i++){
+
+    const drop = document.createElement('div');
+
+    drop.classList.add('drop');
+
+    drop.style.left = Math.random()*100 + 'vw';
+
+    drop.style.animationDuration =
+        (0.5 + Math.random()*1) + 's';
+
+    drop.style.opacity = Math.random();
+
+    drop.style.height =
+        (40 + Math.random()*80) + 'px';
+
+    drop.style.animationDelay =
+        Math.random()*2 + 's';
+
+    rain.appendChild(drop);
+}
+
+/* 日志 */
+
+function log(text){
+
+    document.getElementById('log').innerHTML +=
+        text + '<br>';
+
+    document.getElementById('log').scrollTop =
+        document.getElementById('log').scrollHeight;
+}
+
+/* USB 连接 */
+
+async function connectDevice(){
+
+    try{
+
+        device = await navigator.usb.requestDevice({
+            filters:[]
+        });
+
+        log('已选择设备: ' + device.productName);
+
+        await device.open();
+
+        log('USB 已连接');
+
+    }catch(e){
+
+        log('连接失败: ' + e);
+    }
+}
+
+/* ADB 命令 */
+
+async function sendADBCommand(cmd){
+
+    log('执行: ' + cmd);
+
+    // 真正项目建议接 WebADB
+}
+
+/* 功能 */
+
+async function goHome(){
+    await sendADBCommand(
+        'input keyevent KEYCODE_HOME'
+    );
+}
+
+async function rebootPhone(){
+    await sendADBCommand('reboot');
+}
+
+async function rebootFastboot(){
+    await sendADBCommand(
+        'reboot bootloader'
+    );
+}
+
+async function openApp(){
+
+    const pkg =
+        document.getElementById('packageInput').value;
+
+    const cmd =
+        `monkey -p ${pkg} -c android.intent.category.LAUNCHER 1`;
+
+    await sendADBCommand(cmd);
+}
+
+async function runCustom(){
+
+    const cmd =
+        document.getElementById('customCmd').value;
+
+    await sendADBCommand(cmd);
+}
+
+/* 多语言 */
+
+const langData = {
+
+    zh:{
+        title:'Android 网页控制面板',
+        connect:'连接手机',
+        home:'返回桌面',
+        reboot:'重启手机',
+        fastboot:'重启到 Fastboot',
+        open:'打开 APP',
+        run:'执行指令',
+        pkg:'输入包名，例如 com.android.settings',
+        shell:'输入自定义 shell 指令'
+    },
+
+    en:{
+        title:'Android Web Control Panel',
+        connect:'Connect Device',
+        home:'Go Home',
+        reboot:'Reboot Phone',
+        fastboot:'Reboot Fastboot',
+        open:'Open APP',
+        run:'Run Command',
+        pkg:'Enter package name',
+        shell:'Enter custom shell command'
+    }
+};
+
+function changeLang(lang){
+
+    const t = langData[lang];
+
+    document.getElementById('title').innerText =
+        t.title;
+
+    document.getElementById('connectBtn').innerText =
+        t.connect;
+
+    document.getElementById('homeBtn').innerText =
+        t.home;
+
+    document.getElementById('rebootBtn').innerText =
+        t.reboot;
+
+    document.getElementById('fastbootBtn').innerText =
+        t.fastboot;
+
+    document.getElementById('openBtn').innerText =
+        t.open;
+
+    document.getElementById('runBtn').innerText =
+        t.run;
+
+    document.getElementById('packageInput')
+        .placeholder = t.pkg;
+
+    document.getElementById('customCmd')
+        .placeholder = t.shell;
+}
+</script>
+
+</body>
+</html>
