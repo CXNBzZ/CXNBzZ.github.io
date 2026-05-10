@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Android Web 控制面板</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #111;
+    color: white;
+    padding: 20px;
+}
+
+button {
+    width: 220px;
+    height: 45px;
+    margin: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #00aaff;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+input {
+    width: 400px;
+    height: 40px;
+    font-size: 16px;
+    margin-top: 10px;
+    padding: 5px;
+}
+
+#log {
+    margin-top: 20px;
+    background: #222;
+    padding: 10px;
+    border-radius: 8px;
+    height: 200px;
+    overflow: auto;
+}
+</style>
+</head>
+<body>
+
+<h1>Android 网页控制面板</h1>
+
+<button onclick="connectDevice()">连接手机</button>
+<button onclick="goHome()">返回桌面</button>
+<button onclick="rebootPhone()">重启手机</button>
+<button onclick="rebootFastboot()">重启到 Fastboot</button>
+
+<br><br>
+
+<input id="packageInput" placeholder="输入包名，例如 com.android.settings">
+<button onclick="openApp()">打开 APP</button>
+
+<br><br>
+
+<input id="customCmd" placeholder="输入自定义 shell 指令">
+<button onclick="runCustom()">执行指令</button>
+
+<div id="log"></div>
+
+<script>
+let device;
+
+function log(text){
+    document.getElementById('log').innerHTML += text + '<br>';
+}
+
+async function connectDevice(){
+    try {
+        device = await navigator.usb.requestDevice({
+            filters: []
+        });
+
+        log('已选择设备: ' + device.productName);
+
+        await device.open();
+
+        log('USB 已连接');
+
+        // 实际项目需要完整 ADB 协议
+        // 这里只是演示结构
+
+    } catch(e){
+        log('连接失败: ' + e);
+    }
+}
+
+async function sendADBCommand(cmd){
+
+    log('执行: ' + cmd);
+
+    // 这里只是演示
+    // 真正项目建议使用 adbkit 或 WebADB
+
+    // 示例：
+    // await adb.shell(cmd)
+}
+
+async function goHome(){
+    await sendADBCommand('input keyevent KEYCODE_HOME');
+}
+
+async function rebootPhone(){
+    await sendADBCommand('reboot');
+}
+
+async function rebootFastboot(){
+    await sendADBCommand('reboot bootloader');
+}
+
+async function openApp(){
+
+    const pkg = document.getElementById('packageInput').value;
+
+    const cmd = `monkey -p ${pkg} -c android.intent.category.LAUNCHER 1`;
+
+    await sendADBCommand(cmd);
+}
+
+async function runCustom(){
+
+    const cmd = document.getElementById('customCmd').value;
+
+    await sendADBCommand(cmd);
+}
+</script>
+
+</body>
+</html>
