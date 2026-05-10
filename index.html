@@ -3,136 +3,640 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CX制作 - 单文件控制面板</title>
+<title>CX制作 - WebADB 控制面板</title>
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:"Segoe UI",Arial,sans-serif;height:100vh;color:white;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);overflow:hidden;display:flex;justify-content:center;align-items:center;}
-.panel{position:relative;z-index:1;width:900px;padding:35px;border-radius:30px;background:rgba(255,255,255,0.08);backdrop-filter:blur(18px);text-align:center;display:none;}
-h1{font-size:36px;margin-bottom:20px;}
-.row{margin:18px 0;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:15px;}
-button{height:46px;padding:0 22px;border:none;border-radius:16px;background:linear-gradient(135deg,#00c6ff,#0072ff);color:white;font-size:15px;cursor:pointer;transition:0.3s;box-shadow:0 4px 15px rgba(0,114,255,0.4);}
-button:hover{transform:translateY(-2px) scale(1.03);background:linear-gradient(135deg,#4facfe,#00f2fe);}
-input{width:420px;height:48px;margin:15px auto;border:none;outline:none;border-radius:20px;padding:0 18px;color:white;font-size:16px;background:rgba(255,255,255,0.12);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.2);}
-input::placeholder{color:rgba(255,255,255,0.65);}
-#log{margin-top:25px;width:100%;height:220px;overflow:auto;text-align:left;padding:18px;border-radius:22px;background:rgba(255,255,255,0.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);}
-select{height:45px;padding:0 15px;border:none;outline:none;border-radius:14px;color:white;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);font-size:15px;}
-option{color:black;}
-.rain{position:fixed;width:100%;height:100%;top:0;left:0;overflow:hidden;z-index:0;}
-.drop{position:absolute;bottom:100%;width:2px;height:80px;background:linear-gradient(transparent,rgba(255,255,255,0.7));animation:rain linear infinite;}
-@keyframes rain{to{transform:translateY(120vh);}}
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:"Segoe UI",Arial,sans-serif;
+height:100vh;
+overflow:hidden;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+#effectContainer{
+position:fixed;
+width:100%;
+height:100%;
+top:0;
+left:0;
+z-index:0;
+pointer-events:none;
+}
+
+.drop{
+position:absolute;
+bottom:100%;
+width:2px;
+height:80px;
+background:linear-gradient(transparent,rgba(255,255,255,0.7));
+animation:rain linear infinite;
+}
+
+@keyframes rain{
+to{
+transform:translateY(120vh);
+}
+}
+
+.snow{
+position:absolute;
+top:-50px;
+color:white;
+animation:snowFall linear infinite;
+}
+
+@keyframes snowFall{
+0%{transform:translateY(-50px);}
+100%{transform:translateY(110vh);}
+}
+
+.panel{
+position:relative;
+z-index:1;
+width:950px;
+padding:30px;
+border-radius:30px;
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(18px);
+display:none;
+text-align:center;
+transition:opacity .35s,transform .35s;
+}
+
+#otherPanel{
+backdrop-filter:none;
+}
+
+h1{
+font-size:34px;
+margin-bottom:20px;
+}
+
+.row{
+display:flex;
+justify-content:center;
+align-items:center;
+flex-wrap:wrap;
+gap:12px;
+margin:18px 0;
+}
+
+button{
+height:46px;
+padding:0 22px;
+border:none;
+border-radius:16px;
+background:linear-gradient(135deg,#0072ff,#4facfe);
+color:white;
+font-size:15px;
+cursor:pointer;
+transition:transform .25s,box-shadow .25s,background .25s;
+box-shadow:0 4px 15px rgba(0,114,255,.4);
+}
+
+button:hover{
+transform:translateY(-2px) scale(1.03);
+}
+
+button:active{
+transform:scale(.92);
+}
+
+input,select{
+height:46px;
+padding:0 15px;
+border:none;
+outline:none;
+border-radius:16px;
+background:rgba(255,255,255,.12);
+backdrop-filter:blur(12px);
+color:white;
+}
+
+input{
+width:420px;
+}
+
+input::placeholder{
+color:rgba(255,255,255,.65);
+}
+
+option{
+color:black;
+}
+
+.log{
+margin-top:20px;
+height:220px;
+overflow:auto;
+padding:18px;
+border-radius:20px;
+background:rgba(255,255,255,.08);
+text-align:left;
+}
+
+.top-controls{
+display:flex;
+justify-content:center;
+flex-wrap:wrap;
+gap:10px;
+margin-bottom:15px;
+}
+
+.modal{
+position:fixed;
+width:100%;
+height:100%;
+background:#00000088;
+display:none;
+justify-content:center;
+align-items:center;
+z-index:999;
+animation:fadeIn .3s;
+}
+
+.modal-box{
+width:320px;
+padding:25px;
+border-radius:20px;
+background:#1e1e1e;
+text-align:center;
+animation:popUp .3s;
+}
+
+.modal-buttons{
+margin-top:20px;
+display:flex;
+justify-content:center;
+gap:10px;
+}
+
+@keyframes fadeIn{
+from{opacity:0;}
+to{opacity:1;}
+}
+
+@keyframes popUp{
+from{transform:scale(.7);opacity:0;}
+to{transform:scale(1);opacity:1;}
+}
 </style>
 </head>
 <body>
-<div class="rain" id="rain"></div>
 
-<!-- 上级面板 -->
-<div class="panel" id="mainPanel" style="display:block;">
-<h1>CX制作 - 上级控制面板</h1>
-<div class="row">
-<button onclick="showPanel('selfPanel')">控制自己手机</button>
-<button onclick="showPanel('otherPanel')">控制其他手机</button>
-</div>
-</div>
+<div id="effectContainer"></div>
 
-<!-- 控制自己手机面板 -->
-<div class="panel" id="selfPanel">
-<h1>CX制作 - 控制自己手机</h1>
-<div class="row"><button onclick="showPanel('mainPanel')">⬅ 返回上级面板</button></div>
-<div class="row">
-<button onclick="goHome()">返回桌面</button>
-<button onclick="rebootPhone()">重启手机</button>
-<button onclick="rebootFastboot()">重启到 Fastboot</button>
+<!-- 弹窗 -->
+<div id="customModal" class="modal">
+<div class="modal-box">
+<p id="modalText"></p>
+<div class="modal-buttons">
+<button onclick="confirmModal(true)">确定</button>
+<button onclick="confirmModal(false)">取消</button>
 </div>
-<div class="row">
-<input id="selfPackageInput" placeholder="输入包名，例如 com.android.settings">
-<button onclick="openApp('self')">打开 APP</button>
 </div>
-<div class="row">
-<input id="selfCustomCmd" placeholder="输入自定义 shell 指令">
-<button onclick="runCustom('self')">执行指令</button>
-</div>
-<div class="row">
-<input id="selfFilePath" placeholder="输入要删除的文件路径">
-<button onclick="deleteFile('self')">删除文件</button>
-</div>
-<div class="row"><button onclick="listFiles('self')">获取所有文件列表</button></div>
-<div id="selfLog"></div>
 </div>
 
-<!-- 控制其他手机面板 -->
-<div class="panel" id="otherPanel">
-<h1 id="otherTitle">CX制作 - 控制其他手机</h1>
-<div class="row"><button onclick="showPanel('mainPanel')">⬅ 返回上级面板</button></div>
-<div class="row">
-<button id="connectBtn" onclick="connectDevice()">连接手机</button>
+<!-- 一级 -->
+<div class="panel" id="mainPanel" style="display:block;opacity:1;transform:scale(1);">
+<h1 id="mainTitle">CX制作 - WebADB 控制面板</h1>
+
+<div class="top-controls">
 <select onchange="changeLang(this.value)">
 <option value="zh">中文</option>
 <option value="en">English</option>
 </select>
+
+<select onchange="changeTheme(this.value)">
+<option value="#0072ff">蓝色</option>
+<option value="#ff3b30">红色</option>
+<option value="#34c759">绿色</option>
+<option value="#ff9500">橙色</option>
+<option value="#af52de">紫色</option>
+<option value="#5ac8fa">青色</option>
+<option value="#ffcc00">黄色</option>
+<option value="#8e8e93">灰色</option>
+<option value="#ff2d55">粉色</option>
+<option value="#00c7be">薄荷色</option>
+</select>
+
+<select onchange="changeEffect(this.value)">
+<option value="rain">下雨</option>
+<option value="snow">下雪</option>
+</select>
 </div>
+
 <div class="row">
-<button id="homeBtn" onclick="goHome('other')">返回桌面</button>
-<button id="rebootBtn" onclick="rebootPhone('other')">重启手机</button>
-<button id="fastbootBtn" onclick="rebootFastboot('other')">重启到 Fastboot</button>
+<button id="selfBtn" onclick="showPanel('selfPanel')">控制自己手机</button>
+<button id="otherBtn" onclick="showPanel('otherPanel')">控制其他手机</button>
 </div>
-<div class="row">
-<input id="otherPackageInput" placeholder="输入包名，例如 com.android.settings">
-<button id="openBtn" onclick="openApp('other')">打开 APP</button>
 </div>
+
+<!-- 自己手机 -->
+<div class="panel" id="selfPanel">
+<h1>控制自己手机</h1>
 <div class="row">
-<input id="otherCustomCmd" placeholder="输入自定义 shell 指令">
-<button id="runBtn" onclick="runCustom('other')">执行指令</button>
+<button onclick="showPanel('mainPanel')">⬅ 返回</button>
 </div>
+
 <div class="row">
-<input id="otherFilePath" placeholder="输入要删除的文件路径">
+<button onclick="goHome('self')">返回桌面</button>
+<button onclick="rebootPhone('self')">重启手机</button>
+<button onclick="rebootFastboot('self')">Fastboot</button>
+</div>
+
+<div class="row">
+<input id="selfPackage" placeholder="输入包名">
+<button onclick="openApp('self')">打开 APP</button>
+</div>
+
+<div class="row">
+<input id="selfCmd" placeholder="输入 shell 指令">
+<button onclick="runCustom('self')">执行</button>
+</div>
+
+<div class="row">
+<input id="selfPath" placeholder="输入删除文件路径">
+<button onclick="deleteFile('self')">删除文件</button>
+</div>
+
+<div class="row">
+<button onclick="listFiles('self')">获取文件列表</button>
+</div>
+
+<div class="row">
+<select id="selfFileList"></select>
+<button onclick="downloadSelectedFile('self')">下载文件</button>
+</div>
+
+<div class="log" id="selfLog"></div>
+</div>
+
+<!-- 其他手机 -->
+<div class="panel" id="otherPanel">
+<h1>控制其他手机</h1>
+
+<div class="row">
+<button onclick="showPanel('mainPanel')">⬅ 返回</button>
+<button onclick="connectDevice()">连接手机</button>
+</div>
+
+<div class="row">
+<button onclick="goHome('other')">返回桌面</button>
+<button onclick="rebootPhone('other')">重启手机</button>
+<button onclick="rebootFastboot('other')">Fastboot</button>
+</div>
+
+<div class="row">
+<input id="otherPackage" placeholder="输入包名">
+<button onclick="openApp('other')">打开 APP</button>
+</div>
+
+<div class="row">
+<input id="otherCmd" placeholder="输入 shell 指令">
+<button onclick="runCustom('other')">执行</button>
+</div>
+
+<div class="row">
+<input id="otherPath" placeholder="输入删除文件路径">
 <button onclick="deleteFile('other')">删除文件</button>
 </div>
-<div class="row"><button onclick="listFiles('other')">获取所有文件列表</button></div>
-<div id="otherLog"></div>
+
+<div class="row">
+<button onclick="listFiles('other')">获取文件列表</button>
 </div>
 
-<script>
-// 雨滴效果
-const rain=document.getElementById('rain');
+<div class="row">
+<select id="otherFileList"></select>
+<button onclick="downloadSelectedFile('other')">下载文件</button>
+</div>
+
+<div class="log" id="otherLog"></div>
+</div>
+
+<script type="module">
+
+import {
+Adb,
+AdbDaemonWebUsbDeviceManager
+} from 'https://esm.sh/@yume-chan/adb';
+
+import {
+AdbDaemonTransport
+} from 'https://esm.sh/@yume-chan/adb-daemon-webusb';
+
+let manager = new AdbDaemonWebUsbDeviceManager();
+let adb = null;
+let currentTheme='#0072ff';
+let modalCallback=null;
+
+function log(text,panel='other'){
+const el = panel==='other'
+? document.getElementById('otherLog')
+: document.getElementById('selfLog');
+
+el.innerHTML += text+'<br>';
+el.scrollTop = el.scrollHeight;
+}
+
+window.showPanel=function(id){
+
+const panels=document.querySelectorAll('.panel');
+
+panels.forEach(p=>{
+p.style.opacity='0';
+p.style.transform='scale(.95)';
+setTimeout(()=>p.style.display='none',200);
+});
+
+setTimeout(()=>{
+const target=document.getElementById(id);
+target.style.display='block';
+setTimeout(()=>{
+target.style.opacity='1';
+target.style.transform='scale(1)';
+},50);
+},220);
+
+}
+
+window.changeTheme=function(color){
+currentTheme=color;
+document.querySelectorAll('button').forEach(btn=>{
+btn.style.background=
+`linear-gradient(135deg,${color},#ffffff33)`;
+});
+}
+
+function clearEffects(){
+document.getElementById('effectContainer').innerHTML='';
+}
+
+function createRain(){
+clearEffects();
+const c=document.getElementById('effectContainer');
 for(let i=0;i<180;i++){
-    const drop=document.createElement('div');
-    drop.classList.add('drop');
-    drop.style.left=Math.random()*100+'vw';
-    drop.style.animationDuration=(0.5+Math.random()*1)+'s';
-    drop.style.opacity=Math.random();
-    drop.style.height=(40+Math.random()*80)+'px';
-    drop.style.animationDelay=Math.random()*2+'s';
-    rain.appendChild(drop);
+const d=document.createElement('div');
+d.className='drop';
+d.style.left=Math.random()*100+'vw';
+d.style.animationDuration=(0.5+Math.random())+'s';
+d.style.opacity=Math.random();
+c.appendChild(d);
+}
 }
 
-// 面板切换
-function showPanel(panelId){
-    document.getElementById('mainPanel').style.display='none';
-    document.getElementById('selfPanel').style.display='none';
-    document.getElementById('otherPanel').style.display='none';
-    document.getElementById(panelId).style.display='block';
+function createSnow(){
+clearEffects();
+const c=document.getElementById('effectContainer');
+for(let i=0;i<120;i++){
+const s=document.createElement('div');
+s.className='snow';
+s.innerHTML='❄';
+s.style.left=Math.random()*100+'vw';
+s.style.fontSize=(10+Math.random()*20)+'px';
+s.style.animationDuration=(4+Math.random()*6)+'s';
+c.appendChild(s);
+}
 }
 
-// 日志
-function log(text, panel){const logEl=panel==='other'?document.getElementById('otherLog'):document.getElementById('selfLog');logEl.innerHTML+=text+'<br>';logEl.scrollTop=logEl.scrollHeight;}
+window.changeEffect=function(type){
+if(type==='rain')createRain();
+if(type==='snow')createSnow();
+}
 
-// 控制设备占位
-let device=null;
-async function connectDevice(){try{device=await navigator.usb.requestDevice({filters:[]});log('已选择设备: '+device.productName,'other');await device.open();log('USB 已连接','other');}catch(e){log('连接失败: '+e,'other');}}
-async function sendADBCommand(cmd){log('执行: '+cmd,'other');}
+createRain();
 
-// 基础功能
-async function goHome(panel){await sendADBCommand('input keyevent KEYCODE_HOME');}
-async function rebootPhone(panel){await sendADBCommand('reboot');}
-async function rebootFastboot(panel){await sendADBCommand('reboot bootloader');}
-async function openApp(panel){const pkg=panel==='other'?document.getElementById('otherPackageInput').value:document.getElementById('selfPackageInput').value;const cmd=`monkey -p ${pkg} -c android.intent.category.LAUNCHER 1`;await sendADBCommand(cmd);}
-async function runCustom(panel){const cmd=panel==='other'?document.getElementById('otherCustomCmd').value:document.getElementById('selfCustomCmd').value;await sendADBCommand(cmd);}
-async function deleteFile(panel){const path=panel==='other'?document.getElementById('otherFilePath').value:document.getElementById('selfFilePath').value;if(!path){log('请输入文件路径',panel);return;}await sendADBCommand(`rm ${path}`);log(`已删除文件: ${path}`,panel);}
-async function listFiles(panel){await sendADBCommand('ls -R /');log('已获取文件列表，下载所需文件请使用对应路径',panel);}
+window.changeLang=function(lang){
+const data={
+zh:{main:'CX制作 - WebADB 控制面板',self:'控制自己手机',other:'控制其他手机'},
+en:{main:'CX Production - WebADB Panel',self:'Own Phone',other:'Other Phone'}
+};
+const t=data[lang];
+document.getElementById('mainTitle').innerText=t.main;
+document.getElementById('selfBtn').innerText=t.self;
+document.getElementById('otherBtn').innerText=t.other;
+}
 
-// 多语言
-const langData={zh:{title:'CX制作 - 控制其他手机',connect:'连接手机',home:'返回桌面',reboot:'重启手机',fastboot:'重启到 Fastboot',open:'打开 APP',run:'执行指令',pkg:'输入包名，例如 com.android.settings',shell:'输入自定义 shell 指令'},en:{title:'CX制作 - Control Other Device',connect:'Connect Device',home:'Go Home',reboot:'Reboot Phone',fastboot:'Reboot Fastboot',open:'Open APP',run:'Run Command',pkg:'Enter package name',shell:'Enter custom shell command'}};
-function changeLang(lang){const t=langData[lang];document.getElementById('otherTitle').innerText=t.title;document.getElementById('connectBtn').innerText=t.connect;document.getElementById('homeBtn').innerText=t.home;document.getElementById('rebootBtn').innerText=t.reboot;document.getElementById('fastbootBtn').innerText=t.fastboot;document.getElementById('openBtn').innerText=t.open;document.getElementById('runBtn').innerText=t.run;document.getElementById('otherPackageInput').placeholder=t.pkg;document.getElementById('otherCustomCmd').placeholder=t.shell;}
+function showModal(text,callback){
+modalCallback=callback;
+document.getElementById('modalText').innerText=text;
+document.getElementById('customModal').style.display='flex';
+}
+
+window.confirmModal=function(ok){
+document.getElementById('customModal').style.display='none';
+if(modalCallback)modalCallback(ok);
+}
+
+window.connectDevice=async function(){
+
+try{
+
+showModal('请求 USB 权限并连接 Android 设备',async(ok)=>{
+
+if(!ok)return;
+
+const devices=await manager.getDevices();
+
+let device;
+
+if(devices.length===0){
+device=await manager.requestDevice();
+}else{
+device=devices[0];
+}
+
+const connection=await device.connect();
+
+adb=await Adb.authenticate({
+connection,
+credentialStore:undefined,
+});
+
+log('设备连接成功','other');
+
+});
+
+}catch(e){
+log('连接失败: '+e,'other');
+}
+
+}
+
+async function shell(cmd,panel='other'){
+
+if(panel==='other' && !adb){
+log('请先连接设备','other');
+return '';
+}
+
+try{
+
+if(panel==='other'){
+
+const process=await adb.subprocess.spawn(cmd);
+
+const output=await process.stdout.text();
+
+log('执行: '+cmd,panel);
+
+if(output)log(output,panel);
+
+return output;
+
+}else{
+
+log('本机模式执行: '+cmd,panel);
+return '';
+
+}
+
+}catch(e){
+log('执行失败: '+e,panel);
+return '';
+}
+
+}
+
+window.goHome=async function(panel){
+await shell('input keyevent KEYCODE_HOME',panel);
+}
+
+window.rebootPhone=async function(panel){
+showModal('确定重启手机？',async(ok)=>{
+if(!ok)return;
+await shell('reboot',panel);
+});
+}
+
+window.rebootFastboot=async function(panel){
+showModal('确定进入 Fastboot？',async(ok)=>{
+if(!ok)return;
+await shell('reboot bootloader',panel);
+});
+}
+
+window.openApp=async function(panel){
+const pkg = panel==='other'
+? document.getElementById('otherPackage').value
+: document.getElementById('selfPackage').value;
+
+if(!pkg){
+log('请输入包名',panel);
+return;
+}
+
+await shell(
+`monkey -p ${pkg} -c android.intent.category.LAUNCHER 1`,
+panel
+);
+}
+
+window.runCustom=async function(panel){
+const cmd=panel==='other'
+? document.getElementById('otherCmd').value
+: document.getElementById('selfCmd').value;
+
+await shell(cmd,panel);
+}
+
+window.deleteFile=async function(panel){
+const path=panel==='other'
+? document.getElementById('otherPath').value
+: document.getElementById('selfPath').value;
+
+showModal('确定删除文件？\n'+path,async(ok)=>{
+if(!ok)return;
+await shell(`rm ${path}`,panel);
+});
+}
+
+window.listFiles=async function(panel){
+
+const output = await shell('ls -R /sdcard',panel);
+
+const select = panel==='other'
+? document.getElementById('otherFileList')
+: document.getElementById('selfFileList');
+
+select.innerHTML='';
+
+output.split('\n').forEach(file=>{
+
+if(file.trim()){
+
+const option=document.createElement('option');
+option.value=file;
+option.textContent=file;
+select.appendChild(option);
+
+}
+
+});
+
+}
+
+window.downloadSelectedFile=async function(panel){
+
+if(panel!=='other'){
+log('本机模式无需下载',panel);
+return;
+}
+
+if(!adb){
+log('请先连接设备',panel);
+return;
+}
+
+const file=document.getElementById('otherFileList').value;
+
+if(!file)return;
+
+try{
+
+const sync = await adb.sync();
+
+const stream = await sync.read(file);
+
+const chunks=[];
+
+while(true){
+
+const {done,value}=await stream.next();
+
+if(done)break;
+
+chunks.push(value);
+
+}
+
+const blob=new Blob(chunks);
+
+const url=URL.createObjectURL(blob);
+
+const a=document.createElement('a');
+a.href=url;
+a.download=file.split('/').pop();
+a.click();
+
+log('下载完成: '+file,panel);
+
+}catch(e){
+log('下载失败: '+e,panel);
+}
+
+}
+
 </script>
 </body>
 </html>
